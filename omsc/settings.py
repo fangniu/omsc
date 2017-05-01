@@ -75,14 +75,21 @@ WSGI_APPLICATION = 'omsc.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/1.10/ref/settings/#databases
 
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.mysql',
+#         'NAME': 'omsc',
+#         'USER': 'root',
+#         'PASSWORD': '123456',
+#         'HOST': "10.1.10.75",
+#         'PORT': 8004,
+#     }
+# }
+
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql',
+        'ENGINE': 'django.db.backends.sqlite3',
         'NAME': 'omsc',
-        'USER': 'root',
-        'PASSWORD': '123456',
-        'HOST': "10.1.10.75",
-        'PORT': 8004,
     }
 }
 

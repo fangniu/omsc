@@ -5,4 +5,4 @@ from django.apps import AppConfig
 
 
 class HostsConfig(AppConfig):
-    name = 'resources'
+    name = 'composer'
