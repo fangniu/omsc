@@ -31,23 +31,30 @@ class Host(models.Model):
         return '<%s ip:%s>' % (self.hostname, self.ip)
 
 
+class Stack(models.Model):
+    version = models.CharField(max_length=8, default='3')
+    name = models.CharField(max_length=255, unique=True)
+
+
+    def __str__(self):
+        return 'DockerStack:%s' % self.name
+
+
 class Service(models.Model):
     name = models.CharField(max_length=255, unique=True)
-    hostname = models.CharField(max_length=255, unique=True)
-    host = models.ForeignKey(
-        Host,
-        on_delete=models.CASCADE,
-        related_name='containers',
-        related_query_name='container'
-    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     image = models.CharField(max_length=255)
     command = models.CharField(max_length=255)
-    container_name = models.CharField(max_length=255)
-
-    class Meta:
-        unique_together = ('host', 'container_name')
+    labels = models.TextField(null=True)
+    stack = models.ForeignKey(
+        Stack,
+        on_delete=models.CASCADE,
+        related_name='services',
+        related_query_name='service'
+    )
+    # class Meta:
+    #     unique_together = ('host', 'name')
 
     def __str__(self):
         return 'Service:%s' % self.name
@@ -93,14 +100,14 @@ class Port(models.Model):
         return '%s->%s' % (self.host_port, self.service_port)
 
 
-class EnvVariable(models.Model):
+class Environment(models.Model):
     key = models.IntegerField()
     value = models.IntegerField()
     service = models.ForeignKey(
         Service,
         on_delete=models.CASCADE,
-        related_name='env_variables',
-        related_query_name='env_variable'
+        related_name='environments',
+        related_query_name='environment'
     )
 
     class Meta:
@@ -110,15 +117,27 @@ class EnvVariable(models.Model):
         return '%s=%s' % (self.key, self.value)
 
 
+class HealthCheck(models.Model):
+    service = models.OneToOneField(Service)
+    test = models.TextField()
+    interval = models.IntegerField()
+    timeout = models.IntegerField()
+    retries = models.SmallIntegerField()
+
+    def __str__(self):
+        return '%s:%s' % (self.service.name, self.test)
+
+
 class Deploy(models.Model):
-    service= models.ForeignKey(
-        Service,
-        on_delete=models.CASCADE,
-        related_name='deploys',
-        related_query_name='deploy'
-    )
+    service = models.OneToOneField(Service)
     is_replicated = models.BooleanField(default=True)
     replicas = models.SmallIntegerField(null=True)
+
+    def __str__(self):
+        if self.is_replicated:
+            return '%s replicas:%s' % (self.service.name, self.replicas)
+        else:
+            return '%s global' % self.service.name
 
 
 class Constraint(models.Model):
@@ -138,12 +157,7 @@ class Constraint(models.Model):
     is_equal = models.BooleanField(default=True)
     label_key = models.CharField(max_length=255, null=True)
     value = models.CharField(max_length=255)
-    deploy = models.ForeignKey(
-        Deploy,
-        on_delete=models.CASCADE,
-        related_name='constraints',
-        related_query_name='constraint'
-    )
+    deploy = models.OneToOneField(Deploy)
 
     def __str__(self):
         key = "%s.%s" % (self.get_type_display(), self.label_key) if self.label_key else self.get_type_display()
@@ -157,12 +171,7 @@ class UpdateConfig(models.Model):
     failure_pause = models.BooleanField(default=True)
     monitor = models.IntegerField(null=True)
     max_failure_ratio = models.FloatField(null=True)
-    deploy = models.ForeignKey(
-        Deploy,
-        on_delete=models.CASCADE,
-        related_name='constraints',
-        related_query_name='constraint'
-    )
+    deploy = models.OneToOneField(Deploy)
 
     def __str__(self):
         string = []
@@ -181,18 +190,41 @@ class UpdateConfig(models.Model):
         return '%s:%s' % (self.deploy.service.name, ','.join(string))
 
 
-class Resource(models.Model):
-    # cpu_count = models.SmallIntegerField(null=True)
-    # cpu_percent = models.FloatField(null=True)
-    cpu_period = models.IntegerField(default=0)
-    cpu_quota = models.IntegerField(default=0)
-    cpu_rt_period = models.IntegerField(default=0)
-    cpu_rt_runtime = models.IntegerField(default=0)
-    cpu_shares = models.IntegerField(default=0)
-    cpus = models.FloatField(default=0.000)
-    cpuset_cpus = models.BinaryField(null=True)
-    cpuset_mems = models.BinaryField(null=True)
+class ResourceLimit(models.Model):
+    deploy = models.OneToOneField(Deploy)
+    cpus = models.FloatField(null=True)
     memory = models.IntegerField(null=True)
+
+    def __str__(self):
+        return 'cpus:%s, memory:%s' % (self.cpus, self.memory)
+
+
+class ResourceReservations(models.Model):
+    deploy = models.OneToOneField(Deploy)
+    cpus = models.FloatField(null=True)
+    memory = models.IntegerField(null=True)
+
+    def __str__(self):
+        return 'cpus:%s, memory:%s' % (self.cpus, self.memory)
+
+
+class RestartPolicy(models.Model):
+    delay = models.IntegerField(null=True)
+    ConditionNone = 0
+    ConditionOnFailure = 1
+    ConditionAny = 2
+    condition_type = (
+        (ConditionNone, "none"),
+        (ConditionOnFailure, "on-failure"),
+        (ConditionNone, "any")
+    )
+    condition = models.SmallIntegerField(choices=condition_type, null=True)
+    max_attempts = models.SmallIntegerField(null=True)
+    window = models.IntegerField(null=True)
+    labels = models.TextField(null=True)
+
+    def __str__(self):
+        return 'condition:%s' % self.get_condition_display()
 
 
 if __name__ == '__main__':

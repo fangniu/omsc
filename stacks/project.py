@@ -1,0 +1,9 @@
+#!/usr/bin/env python
+# _*_coding:utf-8_*_
+
+
+__author__ = 'Sheng Chen'
+
+
+def create_project():
+    pass
