@@ -35,7 +35,6 @@ class Stack(models.Model):
     version = models.CharField(max_length=8, default='3')
     name = models.CharField(max_length=255, unique=True)
 
-
     def __str__(self):
         return 'DockerStack:%s' % self.name
 

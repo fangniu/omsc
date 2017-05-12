@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 # _*_coding:utf-8_*_
 
-from common.clients import salt_client
-from common.exceptions import MinionConnectError
+from assets.exceptions import MinionConnectError
+
+from assets.clients import salt_client
 
 __author__ = 'Sheng Chen'
 
@@ -33,3 +34,4 @@ class HostStats(object):
 
 class ContainerStats(object):
     def __init__(self):
+        pass
