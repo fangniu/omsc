@@ -18,11 +18,11 @@ def get_all_stacks():
 
 def create_stack(stack_info):
     stack_name = stack_info['name']
-    stack_yml = stack_info['content']
+    stack_yml_str = stack_info['content']
     stack_dir = os.path.join(STACKS_DIR, stack_name)
     os.mkdir(stack_dir)
     stack_yml_path = os.path.join(stack_dir, 'docker-compose.yml')
-    yaml.safe_dump(stack_yml, open(stack_yml_path, 'w'), default_flow_style=False, width=float("inf"))
+    yaml.safe_dump(yaml.load(stack_yml_str), open(stack_yml_path, 'w'), default_flow_style=False, width=float("inf"))
 
 
 def get_stack_yml(stack_name):
