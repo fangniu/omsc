@@ -37,8 +37,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'assets.apps.AssertsConfig',
-    'stacks',
+    'backend.assets.apps.AssertsConfig',
+    'backend.stacks',
     'corsheaders',
     'rest_framework',
 ]
@@ -59,7 +59,7 @@ ROOT_URLCONF = 'omsc.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, 'templates')]
+        'DIRS': [os.path.join(BASE_DIR, 'frontend/dist')]
         ,
         'APP_DIRS': True,
         'OPTIONS': {
@@ -148,3 +148,6 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, "frontend/dist/static"),
+]

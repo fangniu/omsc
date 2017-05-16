@@ -15,10 +15,12 @@ Including another URLconf
 """
 from django.conf.urls import url, include
 from django.contrib import admin
+from django.views.generic import TemplateView
 
-from stacks import urls as stacks_url
+from backend.stacks import urls as stacks_url
 
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
     url(r'^api/', include(stacks_url)),
+    url(r'^demo/', TemplateView.as_view(template_name="index.html")),
 ]
