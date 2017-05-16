@@ -9,7 +9,7 @@ __author__ = 'Sheng Chen'
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
-VAR_DIR = os.path.join(BASE_DIR, 'backend/var')
+VAR_DIR = os.path.join(BASE_DIR, 'var')
 
 STACKS_DIR = os.path.join(VAR_DIR, 'stacks')
 
