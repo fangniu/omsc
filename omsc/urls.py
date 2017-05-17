@@ -17,7 +17,7 @@ from django.conf.urls import url, include
 from django.contrib import admin
 from django.views.generic import TemplateView
 
-from stacks import urls as stacks_url
+from backend.stacks import urls as stacks_url
 
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
