@@ -35,14 +35,27 @@
           <el-menu-item index="3"><i class="el-icon-setting"></i>导航三</el-menu-item>
         </el-menu>
       </el-col>
-      <el-col>aaaa</el-col>
+      <el-col :span="20" style="padding: 15px">
+        <el-row :span="1">
+
+          <strong class="title" style="margin-bottom: 15px">服务栈:</strong>
+
+        </el-row>
+        <el-row :span="23" font-family="Helvetica Neue">
+          <serviceList></serviceList>
+        </el-row>
+      </el-col>
     </el-row>
   </el-row>
 
 </template>
 
 <script>
+  import ServiceList from './ServiceList.vue'
   export default {
+    components: {
+      ServiceList
+    },
     data() {
       return {
         sysName:'OMS',
@@ -124,6 +137,11 @@
     border-radius: 20px;
     margin: 10px 0 10px 10px;
     float: right;
+  }
+  .title {
+    width: 200px;
+    float: left;
+    color: #475669;
   }
 
 
