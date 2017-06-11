@@ -8,6 +8,7 @@ from utils import cache
 __author__ = 'Sheng Chen'
 
 
+@cache
 def get_docker_client(cluster_name):
     cluster = DockerSwarm.objects.get(name=cluster_name)
     try:

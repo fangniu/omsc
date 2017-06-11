@@ -6,6 +6,7 @@ from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
+from docker.errors import APIError
 from models import DockerSwarm
 from clusters import create_cluster
 from swarm import get_docker_client
@@ -79,6 +80,32 @@ def cluster_detail(request, cluster_name):
         return Response(rest())
 
 
+@api_view(['GET', 'POST'])
+def node_list(request, cluster_name):
+    if request.method == 'GET':
+        cluster = get_cluster(cluster_name)
+        if cluster:
+            dc = get_docker_client(cluster_name)
+            if dc:
+                return Response(rest([n.attrs for n in dc.nodes.list()]))
+            return Response(rest(message='connection error: %s' % cluster.base_url , code=1))
+    elif request.method == 'POST':
+        return Response(rest())
+
+
+@api_view(['GET', 'POST'])
+def node_detail(request, cluster_name, node_id):
+    if request.method == 'GET':
+        cluster = get_cluster(cluster_name)
+        if cluster:
+            dc = get_docker_client(cluster_name)
+            if dc:
+                return Response(rest(get_node(dc, node_id)))
+            return Response(rest(message='connection error: %s' % cluster.base_url , code=1))
+    elif request.method == 'POST':
+        return Response(rest())
+
+
 @api_view(['GET'])
 def stack_yml(request, stack_name):
     check_stack_exist(stack_name)
@@ -96,4 +123,11 @@ def get_cluster(cluster_name):
     try:
         return DockerSwarm.objects.get(name=cluster_name)
     except DockerSwarm.DoesNotExist:
+        raise Http404
+
+
+def get_node(docker_client, node_id):
+    try:
+        return docker_client.nodes.get(node_id).attrs
+    except APIError:
         raise Http404

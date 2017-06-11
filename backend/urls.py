@@ -8,9 +8,11 @@ from backend import views
 __author__ = 'Sheng Chen'
 
 urlpatterns = [
-    url(r'^stacks$', views.stack_list),
     url(r'^stacks/(?P<stack_name>(.*))/yml$', views.stack_yml),
-    url(r'^clusters$', views.cluster_list),
+    url(r'^stacks$', views.stack_list),
+    url(r'^clusters/(?P<cluster_name>(.*))/nodes/(?P<node_id>(.*))$', views.node_detail),
+    url(r'^clusters/(?P<cluster_name>(.*))/nodes$', views.node_list),
     url(r'^clusters/(?P<cluster_name>(.*))$', views.cluster_detail),
+    url(r'^clusters$', views.cluster_list),
 
 ]
