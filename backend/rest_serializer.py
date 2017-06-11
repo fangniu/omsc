@@ -1,10 +1,6 @@
 #!/usr/bin/env python
 # _*_coding:utf-8_*_
 
-from rest_framework import serializers
-from rest_framework.exceptions import ValidationError
-from stacks import get_all_stacks
-
 
 __author__ = 'Sheng Chen'
 

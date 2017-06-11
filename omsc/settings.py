@@ -89,12 +89,12 @@ WSGI_APPLICATION = 'omsc.wsgi.application'
 #     }
 # }
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': 'omsc',
-#     }
-# }
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': 'chen_cloud.db',
+    }
+}
 
 REST_FRAMEWORK = {
     'DEFAULT_RENDERER_CLASSES': (
