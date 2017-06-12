@@ -7,7 +7,7 @@ from yaml.scanner import ScannerError
 
 from jsonschema import validate, FormatChecker
 
-from backend.stacks import get_all_stacks
+from stacks import get_all_stacks
 
 __author__ = 'Sheng Chen'
 

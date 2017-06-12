@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # _*_coding:utf-8_*_
 
-# from compose.config.validation import
 from omsc.conf import STACKS_DIR
 import yaml
 import os
