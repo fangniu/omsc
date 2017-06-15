@@ -110,7 +110,7 @@ def node_detail(request, cluster_name, node_id):
 def stack_yml(request, stack_name):
     check_stack_exist(stack_name)
     yml = get_stack_yml(stack_name)
-    return Response(rest(yml))
+    return Response(rest({'yaml': yml}))
 
 
 def check_stack_exist(stack_name):
