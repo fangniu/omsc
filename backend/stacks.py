@@ -27,8 +27,9 @@ def create_stack(stack_info):
 def get_stack_yml(stack_name):
     stack_path = os.path.join(STACKS_DIR, stack_name, 'docker-compose.yml')
     if os.path.exists(stack_path):
-        return yaml.load(file(stack_path))
-
+        # return yaml.load(file(stack_path))
+        with open(stack_path) as f:
+            return f.read()
 
 
 
