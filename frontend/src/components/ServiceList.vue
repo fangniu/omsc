@@ -28,7 +28,7 @@
           </el-table-column>
           <el-table-column prop="name" label="服务栈" span="4" sortable>
           </el-table-column>
-          <el-table-column prop="services" label="服务" span="14" sortable>
+          <el-table-column prop="services" label="服务" span="14" sortable type="expand">
           </el-table-column>
           <el-table-column label="操作" span="6">
             <template scope="scope">
