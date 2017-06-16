@@ -10,8 +10,8 @@ from docker.errors import APIError
 from models import DockerSwarm
 from clusters import create_cluster
 from swarm import get_docker_client
-from schema_validation import check_stack, check_cluster
-from stacks import get_all_stacks, get_stack_yml, create_stack
+from schema_validation import check_project, check_cluster
+from projects import get_all_projects, get_project_yml, create_project
 
 
 __author__ = 'Sheng Chen'
@@ -40,16 +40,16 @@ def rest(body=None, message="", code=0):
 
 
 @api_view(['GET', 'POST'])
-def stack_list(request):
+def project_list(request):
     if request.method == 'GET':
-        stacks = get_all_stacks()
-        return Response(rest(stacks))
+        projects = get_all_projects()
+        return Response(rest(projects))
     elif request.method == 'POST':
-        ret = check_stack(request.data)
+        ret = check_project(request.data)
         if ret:
             return Response(rest(message=ret, code=1), status=status.HTTP_400_BAD_REQUEST)
         else:
-            create_stack(request.data)
+            create_project(request.data)
             return Response(rest(), status=status.HTTP_201_CREATED)
 
 
@@ -107,14 +107,14 @@ def node_detail(request, cluster_name, node_id):
 
 
 @api_view(['GET'])
-def stack_yml(request, stack_name):
-    check_stack_exist(stack_name)
-    yml = get_stack_yml(stack_name)
+def project_yml(request, stack_name):
+    check_project_exist(stack_name)
+    yml = get_project_yml(stack_name)
     return Response(rest({'yaml': yml}))
 
 
-def check_stack_exist(stack_name):
-    stacks = get_all_stacks()
+def check_project_exist(stack_name):
+    stacks = get_all_projects()
     if stack_name not in stacks:
         raise Http404
 
