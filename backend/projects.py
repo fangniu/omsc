@@ -18,7 +18,7 @@ def get_all_projects():
         project = get_project(name)
         ret.append(
             {
-                "name": project.name,
+                "name": name,
                 "services": [s.name for s in project.services]
             }
         )
@@ -40,9 +40,6 @@ def get_project_yml(project_name):
         # return yaml.load(file(stack_path))
         with open(project_path) as f:
             return f.read()
-
-
-
 
 if __name__ == '__main__':
     print get_all_projects()

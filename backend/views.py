@@ -12,7 +12,8 @@ from clusters import create_cluster
 from swarm import get_docker_client
 from schema_validation import check_project, check_cluster
 from projects import get_all_projects, get_project_yml, create_project
-
+from omsc.conf import STACKS_DIR
+import os
 
 __author__ = 'Sheng Chen'
 
@@ -107,16 +108,10 @@ def node_detail(request, cluster_name, node_id):
 
 
 @api_view(['GET'])
-def project_yml(request, stack_name):
-    check_project_exist(stack_name)
-    yml = get_project_yml(stack_name)
+def project_yml(request, project_name):
+    project_exists(project_name)
+    yml = get_project_yml(project_name)
     return Response(rest({'yaml': yml}))
-
-
-def check_project_exist(stack_name):
-    stacks = get_all_projects()
-    if stack_name not in stacks:
-        raise Http404
 
 
 def get_cluster(cluster_name):
@@ -130,4 +125,9 @@ def get_node(docker_client, node_id):
     try:
         return docker_client.nodes.get(node_id).attrs
     except APIError:
+        raise Http404
+
+
+def project_exists(project_name):
+    if not os.path.exists(os.path.join(STACKS_DIR, project_name)):
         raise Http404
