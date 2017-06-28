@@ -22,6 +22,7 @@ def get_all_projects():
                 "services": [s.name for s in project.services]
             }
         )
+    return ret
 
 
 def create_project(project_info):
