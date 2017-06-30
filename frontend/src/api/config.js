@@ -4,7 +4,7 @@ export default{
   url: '/get',
 
 
-  baseURL: 'http://10.1.10.75:8002/v1',
+  baseURL: 'http://10.0.2.4:6811/api/',
   method: 'GET',
 
   transformRequest: [

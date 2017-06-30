@@ -2,7 +2,7 @@
   <div>
     <el-row :span="1">
 
-      <strong class="title" style="margin-bottom: 15px">服务栈:</strong>
+      <strong class="title" style="margin-bottom: 15px">Docker Stack:</strong>
 
     </el-row>
     <el-row :span="23" font-family="Helvetica Neue">
@@ -11,7 +11,7 @@
         <el-col :span="24" class="toolbar" style="padding-bottom: 0px;">
           <el-form :inline="true" :model="filters">
             <el-form-item>
-              <el-input v-model="filters.name" placeholder="栈名"></el-input>
+              <el-input v-model="filters.services" placeholder="服务名"></el-input>
             </el-form-item>
             <el-form-item>
               <el-button type="primary" v-on:click="getUsers">查询</el-button>
@@ -23,12 +23,12 @@
         </el-col>
 
         <!--列表-->
-        <el-table :data="stack_list" highlight-current-row v-loading="listLoading" @selection-change="selsChange" style="width: 100%;">
+        <el-table :data="project_list" highlight-current-row v-loading="listLoading" @selection-change="selsChange" style="width: 100%;">
           <el-table-column type="selection" width="55">
           </el-table-column>
-          <el-table-column prop="name" label="服务栈" span="4" sortable>
+          <el-table-column prop="name" label="项目" span="4" sortable>
           </el-table-column>
-          <el-table-column prop="services" label="服务" span="14" sortable type="expand">
+          <el-table-column prop="services" label="服务" span="14">
           </el-table-column>
           <el-table-column label="操作" span="6">
             <template scope="scope">
@@ -48,14 +48,14 @@
         <!--编辑界面-->
         <el-dialog title="编辑" v-model="editFormVisible" :close-on-click-modal="false">
           <el-form :model="editForm" label-width="80px" ref="editForm">
-            <el-form-item label="服务栈" prop="name">
+            <el-form-item label="项目" prop="name">
               <el-input v-model="editForm.name" auto-complete="off"></el-input>
             </el-form-item>
             <el-form-item label="ID号" prop="id">
               <el-input v-model="editForm.id"></el-input>
             </el-form-item>
             <el-form-item label="yaml">
-              <el-input type="textarea" v-model="editForm.yml" :autosize=true></el-input>
+              <el-input type="textarea" v-model="editForm.yml" :autosize="{ minRows: 2, maxRows: 20 }"></el-input>
             </el-form-item>
           </el-form>
           <div slot="footer" class="dialog-footer">
@@ -67,7 +67,7 @@
         <!--新增界面-->
         <el-dialog title="新增" v-model="addFormVisible" :close-on-click-modal="false">
           <el-form :model="addForm" label-width="80px" :rules="addFormRules" ref="addForm">
-            <el-form-item label="栈名" prop="name">
+            <el-form-item label="工程" prop="name">
               <el-input v-model="addForm.name" auto-complete="off"></el-input>
             </el-form-item>
             <el-form-item label="性别">
@@ -105,14 +105,21 @@
     beforeMount(){
       let that = this;
       let params = {
-        url:"/kmxes",
+        url:"/projects",
       };
       api.get(params)
         .then(function(res){
-          console.log(JSON.parse(res.data.data).sets[0].rows);
+          console.log(res.data.body.items);
+          that.project_list = []
+          res.data.body.items.forEach((item, i) => {
+              that.project_list[i] = {
+                  name: item.name,
+                  services: item.services.join(',')
+              }
+          })
         })
         .catch(function(err){
-          console.log('11');
+          console.log(err);
           api.reqFail(that,"获取列表失败请刷新");
         });
     },
@@ -121,10 +128,15 @@
         filters: {
           name: ''
         },
-        stack_list: [  {
+        project_list: [  {
           name: 'myWeb',
           services: "web, redis, db"
-        }],
+        },
+         {
+          name: 'myWeb2',
+          services: "web, redis, db"
+        }
+        ],
         total: 0,
         page: 1,
         listLoading: false,
