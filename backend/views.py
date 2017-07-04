@@ -48,10 +48,10 @@ def project_list(request):
     elif request.method == 'POST':
         ret = check_project(request.data)
         if ret:
-            return Response(rest(message=ret, code=1), status=status.HTTP_400_BAD_REQUEST)
+            return Response(rest(message=ret, code=1))
         else:
             create_project(request.data)
-            return Response(rest(), status=status.HTTP_201_CREATED)
+            return Response(rest())
 
 
 @api_view(['GET', 'POST'])

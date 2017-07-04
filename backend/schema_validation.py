@@ -4,9 +4,7 @@
 
 import yaml
 from yaml.scanner import ScannerError
-
 from jsonschema import validate, FormatChecker
-
 from projects import get_all_projects
 
 __author__ = 'Sheng Chen'
@@ -66,14 +64,16 @@ def check_project(project_info):
     try:
         validate(project_info, stack_schema, format_checker=FormatChecker())
         if project_info['name'] in get_all_projects():
-            return "Stack name conflict!"
+            return "Project name conflict!"
         content = yaml.load(project_info['content'])
         if type(content) != dict:
             return "FormatError: The field 'content' is invalid"
     except ScannerError:
         return "FormatError: The field 'content' is invalid"
     except Exception, e:
+        print type(e)
         return e.message
+
 
 
 def check_cluster(info):

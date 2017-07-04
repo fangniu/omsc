@@ -6,7 +6,7 @@
         <side-bar></side-bar>
       </el-col>
       <el-col :span="20" style="padding: 15px;height: 100%">
-        <service-list></service-list>
+        <project-list></project-list>
       </el-col>
     </el-row>
   </el-row>
@@ -14,12 +14,12 @@
 </template>
 
 <script>
-  import ServiceList from '../components/ServiceList.vue'
+  import ProjectList from '../components/ProjectList.vue'
   import OmsHead from '../components/OmsHead.vue'
   import SideBar from '../components/SideBar.vue'
   export default {
     components: {
-      ServiceList,
+      ProjectList,
       OmsHead,
       SideBar
     },

@@ -1,0 +1,404 @@
+<template>
+  <div>
+    <el-row :span="1">
+      <el-col :span="20">
+        <strong class="title" style="margin-bottom: 10px">Docker Stack:</strong>
+      </el-col>
+      <el-col :span="4" align="right">
+        <el-button type="primary" @click="handleAdd" style="margin-bottom: 10px">新增</el-button>
+      </el-col>
+    </el-row>
+    <el-row :span="23" font-family="Helvetica Neue">
+      <section>
+        <!--工具条-->
+        <!--<el-col :span="24" class="toolbar" style="padding-bottom: 0px;">-->
+          <!--<el-form :inline="true" :model="filters">-->
+            <!--<el-form-item>-->
+              <!--<el-input v-model="filters.services" placeholder="服务名"></el-input>-->
+            <!--</el-form-item>-->
+            <!--<el-form-item>-->
+              <!--<el-button type="primary" v-on:click="getUsers">查询</el-button>-->
+            <!--</el-form-item>-->
+            <!--<el-form-item>-->
+              <!--<el-button type="primary" @click="handleAdd">新增</el-button>-->
+            <!--</el-form-item>-->
+          <!--</el-form>-->
+        <!--</el-col>-->
+
+        <!--列表-->
+        <!--<el-table :data="project_list" highlight-current-row v-loading="listLoading" @selection-change="selsChange" style="width: 100%;">-->
+          <!--<el-table-column type="selection" width="55">-->
+          <!--</el-table-column>-->
+          <!--<el-table-column prop="name" label="项目" span="4" sortable>-->
+          <!--</el-table-column>-->
+          <!--<el-table-column prop="services" label="服务" span="14">-->
+          <!--</el-table-column>-->
+          <!--<el-table-column label="操作" span="6">-->
+            <!--<template scope="scope">-->
+              <!--<el-button size="small" @click="handleEdit(scope.$index, scope.row)">编辑</el-button>-->
+              <!--<el-button type="danger" size="small" @click="handleDel(scope.$index, scope.row)">删除</el-button>-->
+            <!--</template>-->
+          <!--</el-table-column>-->
+        <!--</el-table>-->
+        <!--<el-table :data="projectList" highlight-current-row v-loading="listLoading" @selection-change="selsChange" style="width: 100%;">-->
+          <!--<el-table-column type="selection" width="55">-->
+          <!--</el-table-column>-->
+          <!--<el-table-column prop="label" label="项目" span="4" sortable>-->
+          <!--</el-table-column>-->
+          <!--<el-table-column prop="services" label="服务" span="14">-->
+          <!--</el-table-column>-->
+          <!--<el-table-column label="操作" span="6">-->
+            <!--<template scope="scope">-->
+              <!--<el-button size="small" @click="handleEdit(scope.$index, scope.row)">编辑</el-button>-->
+              <!--<el-button type="danger" size="small" @click="handleDel(scope.$index, scope.row)">删除</el-button>-->
+            <!--</template>-->
+          <!--</el-table-column>-->
+        <!--</el-table>-->
+
+        <!--project tree-->
+        <el-tree
+          :data="projectTree"
+          :props="defaultProps"
+          show-checkbox
+          accordion
+          node-key="id"
+          :expand-on-click-node="false"
+          :render-content="renderContent"
+          >
+        </el-tree>
+
+        <!--工具条-->
+        <!--<el-col :span="24" class="toolbar">-->
+          <!--<el-button type="danger" @click="batchRemove" :disabled="this.sels.length===0">批量删除</el-button>-->
+          <!--<el-pagination layout="prev, pager, next" @current-change="handleCurrentChange" :page-size="20" :total="total" style="float:right;">-->
+          <!--</el-pagination>-->
+        <!--</el-col>-->
+
+        <!--编辑界面-->
+        <el-dialog title="编辑" v-model="editFormVisible" :close-on-click-modal="false">
+          <el-form :model="editForm" label-width="80px" ref="editForm">
+            <el-form-item label="项目" prop="name">
+              <el-input v-model="editForm.name" auto-complete="off"></el-input>
+            </el-form-item>
+            <el-form-item label="yaml">
+              <el-input type="textarea" v-model="editForm.yaml" :autosize="{ minRows: 2, maxRows: 20 }"></el-input>
+            </el-form-item>
+          </el-form>
+          <div slot="footer" class="dialog-footer">
+            <el-button @click.native="editFormVisible = false">取消</el-button>
+            <el-button type="primary" @click.native="editSubmit" :loading="editLoading">修改</el-button>
+          </div>
+        </el-dialog>
+
+        <!--新增界面-->
+        <el-dialog title="新增" v-model="newProjectFormVisible" :close-on-click-modal="false">
+          <el-form :model="newProjectForm" label-width="80px" :rules="newProjectFormRules" ref="newProjectForm">
+            <el-form-item label="项目" prop="name">
+              <el-input v-model="newProjectForm.name" auto-complete="off"></el-input>
+            </el-form-item>
+            <el-form-item label="yaml">
+              <el-input type="textarea" v-model="newProjectForm.content" :autosize="{ minRows: 2, maxRows: 20 }"></el-input>
+            </el-form-item>
+          </el-form>
+          <div slot="footer" class="dialog-footer">
+            <el-button @click.native="newProjectFormVisible = false">取消</el-button>
+            <el-button type="primary" @click.native="addSubmit" :loading="addLoading">创建</el-button>
+            <el-button type="primary" :loading="editLoading">创建并部署</el-button>
+          </div>
+        </el-dialog>
+      </section>
+    </el-row>
+  </div>
+
+
+</template>
+
+<script>
+  import API from '../api/API'
+  const api = new API();
+  export default {
+    created(){
+      this.getProjects()
+    },
+    data() {
+      return {
+        filters: {
+          name: ''
+        },
+        projectTree: [],
+        defaultProps: {
+          children: 'children',
+          label: 'label'
+        },
+        total: 0,
+        page: 1,
+        listLoading: false,
+        sels: [],//列表选中列
+
+        editFormVisible: false,//编辑界面是否显示
+        editLoading: false,
+        //编辑界面数据
+        editForm: {},
+
+        newProjectFormVisible: false,//新增界面是否显示
+        newProjectSubmitLoading: false,
+        newProjectFormRules: {
+          name: [
+            { required: true, message: '请输入项目名', trigger: 'blur' }
+          ]
+        },
+        //新增界面数据
+        newProjectForm: {
+          name: '',
+          content: ''
+        }
+
+      }
+    },
+    methods: {
+      append(store, data) {
+        store.append({ id: id++, label: 'testtest', children: [] }, data);
+      },
+
+      remove(store, data) {
+        store.remove(data);
+      },
+      renderContent:function(createElement, { node, data, store }) {
+        let that = this;
+        return createElement('span', [
+            createElement('span', node.label),
+            createElement('span', {attrs:{
+                style:"float: right; margin-right: 20px"
+                }},[
+                    createElement('el-button',{attrs:{
+                        size:"mini"
+                    },on:{
+                        click:function() {
+                            console.info("点击了编辑按钮");
+                            console.log(data)
+                            if(data.isProjectNode){
+                                that.handleEdit(data.label);
+                            }
+//                            that.handleEdit();
+                        }
+                    }},"编辑"),
+                    createElement('el-button',{attrs:{
+                        size: "mini",
+                        type: "danger"
+                    },on:{
+                        click:function() {
+                            console.info("点击了节点" + data.id + "的删除按钮");
+                            store.remove(data);
+                        }
+                    }},"删除"),
+                ]),
+        ]);
+      },
+      getProjects(){
+        let that = this;
+        let params = {
+          url:"/projects",
+        };
+        api.get(params)
+          .then(function(res){
+            console.log(res.data.body.items);
+            that.projectTree = [];
+            res.data.body.items.forEach((item, i) => {
+                let children = [];
+                item.services.forEach((service_name, j) => {
+                    children[j] = {
+                        id: j,
+                        label: service_name,
+                        isProjectNode: false,
+                    }
+                });
+                that.projectTree[i] = {
+                    id: i,
+                    label: item.name,
+                    isProjectNode: true,
+                    children: children
+                }
+            });
+          })
+          .catch(function(err){
+            console.log(err);
+            api.reqFail(that,"获取列表失败请刷新");
+          });
+        console.log("projectTree: " + this.projectTree);
+      },
+      getProject(projectName){
+        let that = this;
+        let params = {
+          url:"/projects/" + projectName + "/yml",
+        };
+        api.get(params)
+          .then(function(res){
+            console.log("project111:");
+            console.log(res.data.body);
+            that.editForm = Object.assign(res.data.body, {name: projectName})
+          })
+          .catch(function(err){
+            console.log(err);
+            api.reqFail(that,"获取project失败请刷新");
+          });
+      },
+      postProject(data) {
+        let that = this;
+        let param = {
+            url: "/projects",
+            data: data
+        };
+        api.post(param)
+          .then(function(res){
+            console.log("post project:");
+            console.log(res.data);
+            that.addLoading = false;
+            //NProgress.done();
+            if(res.data.code === 1){
+              that.$message({
+                message: res.data.message,
+                type: 'error'
+              })
+            }
+            else{
+              that.$message({
+                message: '提交成功',
+                type: 'success'
+              });
+              that.newProjectFormVisible = false;
+            }
+          })
+          .catch(function(err){
+            console.log(err);
+            api.reqFail(that,"post project失败");
+            that.addLoading = false;
+          });
+      },
+      //性别显示转换
+      formatSex: function (row, column) {
+        return row.sex == 1 ? '男' : row.sex == 0 ? '女' : '未知';
+      },
+      handleCurrentChange(val) {
+        this.page = val;
+        this.getUsers();
+      },
+      //删除
+      handleDel: function (index, row) {
+        this.$confirm('确认删除该记录吗?', '提示', {
+          type: 'warning'
+        }).then(() => {
+          this.listLoading = true;
+          //NProgress.start();
+          let para = { id: row.id };
+          removeUser(para).then((res) => {
+            this.listLoading = false;
+            //NProgress.done();
+            this.$message({
+              message: '删除成功',
+              type: 'success'
+            });
+            this.getUsers();
+          });
+        }).catch(() => {
+
+        });
+      },
+      //显示编辑界面
+      handleEdit: function (projectName) {
+        this.getProject(projectName)
+        this.editFormVisible = true;
+//        this.editForm = Object.assign({}, row);
+      },
+      //显示新增界面
+      handleAdd: function () {
+        this.newProjectFormVisible = true;
+      },
+      //编辑
+      editSubmit: function () {
+        this.$refs.editForm.validate((valid) => {
+          if (valid) {
+            this.$confirm('确认提交吗？', '提示', {}).then(() => {
+              this.editLoading = true;
+              //NProgress.start();
+              let para = Object.assign({}, this.editForm);
+              para.birth = (!para.birth || para.birth == '') ? '' : util.formatDate.format(new Date(para.birth), 'yyyy-MM-dd');
+              editUser(para).then((res) => {
+                this.editLoading = false;
+                //NProgress.done();
+                this.$message({
+                  message: '提交成功',
+                  type: 'success'
+                });
+                this.$refs['editForm'].resetFields();
+                this.editFormVisible = false;
+                this.getUsers();
+              });
+            });
+          }
+        });
+      },
+      //新增
+      addSubmit: function () {
+        this.$refs.newProjectForm.validate((valid) => {
+          if (valid) {
+            this.$confirm('确认提交吗？', '提示', {}).then(() => {
+              this.addLoading = true;
+              this.postProject(this.newProjectForm)
+              //NProgress.start();
+//              let para = Object.assign({}, this.addForm);
+//              para.birth = (!para.birth || para.birth == '') ? '' : util.formatDate.format(new Date(para.birth), 'yyyy-MM-dd');
+//              addUser(para).then((res) => {
+//                this.addLoading = false;
+//                //NProgress.done();
+//                this.$message({
+//                  message: '提交成功',
+//                  type: 'success'
+//                });
+//                this.$refs['addForm'].resetFields();
+//                this.addFormVisible = false;
+//                this.getUsers();
+//              });
+            });
+          }
+        });
+      },
+      selsChange: function (sels) {
+        this.sels = sels;
+      },
+      //批量删除
+      batchRemove: function () {
+        var ids = this.sels.map(item => item.id).toString();
+        this.$confirm('确认删除选中记录吗？', '提示', {
+          type: 'warning'
+        }).then(() => {
+          this.listLoading = true;
+          //NProgress.start();
+          let para = { ids: ids };
+          batchRemoveUser(para).then((res) => {
+            this.listLoading = false;
+            //NProgress.done();
+            this.$message({
+              message: '删除成功',
+              type: 'success'
+            });
+            this.getUsers();
+          });
+        }).catch(() => {
+
+        });
+      }
+    },
+    mounted() {
+//      this.getUsers();
+    }
+  }
+
+</script>
+
+<style scoped>
+  .title {
+    width: 200px;
+    float: left;
+    color: #475669;
+  }
+</style>
