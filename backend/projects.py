@@ -34,6 +34,11 @@ def create_project(project_info):
     yaml.safe_dump(yaml.load(project_yml_str), open(stack_yml_path, 'w'), default_flow_style=False, width=float("inf"))
 
 
+def update_project(project_name, project_yml_str):
+    stack_yml_path = os.path.join(STACKS_DIR, project_name, 'docker-compose.yml')
+    yaml.safe_dump(yaml.load(project_yml_str), open(stack_yml_path, 'w'), default_flow_style=False, width=float("inf"))
+
+
 def get_project_yml(project_name):
     project_path = os.path.join(STACKS_DIR, project_name, 'docker-compose.yml')
     if os.path.exists(project_path):

@@ -10,8 +10,8 @@ from docker.errors import APIError
 from models import DockerSwarm
 from clusters import create_cluster
 from swarm import get_docker_client
-from schema_validation import check_project, check_cluster
-from projects import get_all_projects, get_project_yml, create_project
+from schema_validation import check_new_project, check_project_yml, check_cluster
+from projects import get_all_projects, get_project_yml, create_project, update_project
 from omsc.conf import STACKS_DIR
 import os
 
@@ -40,13 +40,13 @@ def rest(body=None, message="", code=0):
     }
 
 
-@api_view(['GET', 'POST'])
+@api_view(['GET', 'PUT', 'POST'])
 def project_list(request):
     if request.method == 'GET':
         projects = get_all_projects()
         return Response(rest(projects))
     elif request.method == 'POST':
-        ret = check_project(request.data)
+        ret = check_new_project(request.data)
         if ret:
             return Response(rest(message=ret, code=1))
         else:
@@ -107,11 +107,23 @@ def node_detail(request, cluster_name, node_id):
         return Response(rest())
 
 
-@api_view(['GET'])
+@api_view(['GET', 'PUT'])
 def project_yml(request, project_name):
     project_exists(project_name)
-    yml = get_project_yml(project_name)
-    return Response(rest({'yaml': yml}))
+    if request.method == 'GET':
+        yml = get_project_yml(project_name)
+        return Response(rest({'yaml': yml}))
+    elif request.method == 'PUT':
+        content = request.data.get('yaml')
+        if content:
+            ret = check_project_yml(content, project_name)
+            if ret:
+                return Response(rest(message=ret, code=1))
+            else:
+                update_project(project_name, content)
+                return Response(rest())
+        else:
+            return Response(rest(message="This field 'yaml' is required!"), status=status.HTTP_400_BAD_REQUEST)
 
 
 def get_cluster(cluster_name):

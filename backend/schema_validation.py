@@ -63,19 +63,27 @@ cluster_schema = {
 }
 
 
-def check_project(project_info):
-    tmp_f = NamedTemporaryFile()
+def check_new_project(project_info):
     try:
         validate(project_info, stack_schema, format_checker=FormatChecker())
-        if project_info['name'] in get_all_projects():
+        name = project_info['name']
+        if name in get_all_projects():
             return "Project name conflict!"
-        tmp_f.write(project_info['content'])
+        return check_project_yml(project_info['content'], name)
+    except Exception, e:
+        return e.message
+
+
+def check_project_yml(project_yml, project_name=''):
+    tmp_f = NamedTemporaryFile()
+    try:
+        tmp_f.write(project_yml)
         tmp_f.seek(0)
         get_project(os.path.dirname(tmp_f.name), config_path=[os.path.basename(tmp_f.name)])
     except ScannerError:
         return "FormatError: The field 'content' is invalid"
     except ConfigurationError, e:
-        msg = str(e).replace(tmp_f.name, project_info['name'])
+        msg = str(e).replace(tmp_f.name, project_name)
         return msg
     finally:
         tmp_f.close()

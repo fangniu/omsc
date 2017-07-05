@@ -5,7 +5,7 @@
         <strong class="title" style="margin-bottom: 10px">Docker Stack:</strong>
       </el-col>
       <el-col :span="4" align="right">
-        <el-button type="primary" @click="handleAdd" style="margin-bottom: 10px">新增</el-button>
+        <el-button type="primary" @click="handleProjectAdd" style="margin-bottom: 10px">新增</el-button>
       </el-col>
     </el-row>
     <el-row :span="23" font-family="Helvetica Neue">
@@ -75,18 +75,18 @@
         <!--</el-col>-->
 
         <!--编辑界面-->
-        <el-dialog title="编辑" v-model="editFormVisible" :close-on-click-modal="false">
-          <el-form :model="editForm" label-width="80px" ref="editForm">
+        <el-dialog title="编辑" v-model="editProjectFormVisible" :close-on-click-modal="false">
+          <el-form :model="editProjectForm" label-width="80px" ref="editProjectForm">
             <el-form-item label="项目" prop="name">
-              <el-input v-model="editForm.name" auto-complete="off"></el-input>
+              <el-input v-model="editProjectForm.name" auto-complete="off"></el-input>
             </el-form-item>
             <el-form-item label="yaml">
-              <el-input type="textarea" v-model="editForm.yaml" :autosize="{ minRows: 2, maxRows: 20 }"></el-input>
+              <el-input type="textarea" v-model="editProjectForm.yaml" :autosize="{ minRows: 2, maxRows: 20 }"></el-input>
             </el-form-item>
           </el-form>
           <div slot="footer" class="dialog-footer">
-            <el-button @click.native="editFormVisible = false">取消</el-button>
-            <el-button type="primary" @click.native="editSubmit" :loading="editLoading">修改</el-button>
+            <el-button @click.native="editProjectFormVisible = false">取消</el-button>
+            <el-button type="primary" @click.native="editProjectSubmit" :loading="editProjectSubmitLoading">修改</el-button>
           </div>
         </el-dialog>
 
@@ -102,8 +102,8 @@
           </el-form>
           <div slot="footer" class="dialog-footer">
             <el-button @click.native="newProjectFormVisible = false">取消</el-button>
-            <el-button type="primary" @click.native="addSubmit" :loading="addLoading">创建</el-button>
-            <el-button type="primary" :loading="editLoading">创建并部署</el-button>
+            <el-button type="primary" @click.native="newProjectSubmit" :loading="newProjectSubmitLoading">创建</el-button>
+            <el-button type="primary" :loading="newProjectSubmitLoading">创建并部署</el-button>
           </div>
         </el-dialog>
       </section>
@@ -135,10 +135,10 @@
         listLoading: false,
         sels: [],//列表选中列
 
-        editFormVisible: false,//编辑界面是否显示
-        editLoading: false,
+        editProjectFormVisible: false,//编辑界面是否显示
+        editProjectSubmitLoading: false,
         //编辑界面数据
-        editForm: {},
+        editProjectForm: {},
 
         newProjectFormVisible: false,//新增界面是否显示
         newProjectSubmitLoading: false,
@@ -177,9 +177,8 @@
                             console.info("点击了编辑按钮");
                             console.log(data)
                             if(data.isProjectNode){
-                                that.handleEdit(data.label);
+                                that.handleProjectEdit(data.label);
                             }
-//                            that.handleEdit();
                         }
                     }},"编辑"),
                     createElement('el-button',{attrs:{
@@ -224,7 +223,8 @@
             console.log(err);
             api.reqFail(that,"获取列表失败请刷新");
           });
-        console.log("projectTree: " + this.projectTree);
+        console.log("projectTree: ");
+        console.log(this.projectTree);
       },
       getProject(projectName){
         let that = this;
@@ -235,7 +235,7 @@
           .then(function(res){
             console.log("project111:");
             console.log(res.data.body);
-            that.editForm = Object.assign(res.data.body, {name: projectName})
+            that.editProjectForm = Object.assign(res.data.body, {name: projectName})
           })
           .catch(function(err){
             console.log(err);
@@ -252,7 +252,6 @@
           .then(function(res){
             console.log("post project:");
             console.log(res.data);
-            that.addLoading = false;
             //NProgress.done();
             if(res.data.code === 1){
               that.$message({
@@ -266,12 +265,45 @@
                 type: 'success'
               });
               that.newProjectFormVisible = false;
+              that.getProjects()
             }
           })
           .catch(function(err){
             console.log(err);
             api.reqFail(that,"post project失败");
-            that.addLoading = false;
+          });
+      },
+      putProject(projectName, yaml_str) {
+        let that = this;
+        let param = {
+            url:"/projects/" + projectName + "/yml",
+            data: {
+                yaml: yaml_str
+            }
+        };
+        api.put(param)
+          .then(function(res){
+            console.log("put project:");
+            console.log(res.data);
+            //NProgress.done();
+            if(res.data.code === 1){
+              that.$message({
+                message: res.data.message,
+                type: 'error'
+              })
+            }
+            else{
+              that.$message({
+                message: '修改成功',
+                type: 'success'
+              });
+              that.getProjects();
+              that.editProjectFormVisible = false
+            }
+          })
+          .catch(function(err){
+            console.log(err);
+            api.reqFail(that,"post project失败");
           });
       },
       //性别显示转换
@@ -304,60 +336,37 @@
         });
       },
       //显示编辑界面
-      handleEdit: function (projectName) {
+      handleProjectEdit: function (projectName) {
         this.getProject(projectName)
-        this.editFormVisible = true;
+        this.editProjectFormVisible = true;
 //        this.editForm = Object.assign({}, row);
       },
       //显示新增界面
-      handleAdd: function () {
+      handleProjectAdd: function () {
         this.newProjectFormVisible = true;
       },
       //编辑
-      editSubmit: function () {
-        this.$refs.editForm.validate((valid) => {
+      editProjectSubmit: function () {
+        this.$refs.editProjectForm.validate((valid) => {
           if (valid) {
             this.$confirm('确认提交吗？', '提示', {}).then(() => {
-              this.editLoading = true;
-              //NProgress.start();
-              let para = Object.assign({}, this.editForm);
-              para.birth = (!para.birth || para.birth == '') ? '' : util.formatDate.format(new Date(para.birth), 'yyyy-MM-dd');
-              editUser(para).then((res) => {
-                this.editLoading = false;
-                //NProgress.done();
-                this.$message({
-                  message: '提交成功',
-                  type: 'success'
-                });
-                this.$refs['editForm'].resetFields();
-                this.editFormVisible = false;
-                this.getUsers();
-              });
+              console.log('editProjectForm:');
+              console.log(this.editProjectForm);
+              this.editProjectSubmitLoading = true;
+              this.putProject(this.editProjectForm.name, this.editProjectForm.yaml)
+              this.editProjectSubmitLoading = false;
             });
           }
         });
       },
       //新增
-      addSubmit: function () {
+      newProjectSubmit: function () {
         this.$refs.newProjectForm.validate((valid) => {
           if (valid) {
             this.$confirm('确认提交吗？', '提示', {}).then(() => {
-              this.addLoading = true;
+              this.newProjectSubmitLoading = true;
               this.postProject(this.newProjectForm)
-              //NProgress.start();
-//              let para = Object.assign({}, this.addForm);
-//              para.birth = (!para.birth || para.birth == '') ? '' : util.formatDate.format(new Date(para.birth), 'yyyy-MM-dd');
-//              addUser(para).then((res) => {
-//                this.addLoading = false;
-//                //NProgress.done();
-//                this.$message({
-//                  message: '提交成功',
-//                  type: 'success'
-//                });
-//                this.$refs['addForm'].resetFields();
-//                this.addFormVisible = false;
-//                this.getUsers();
-//              });
+              this.newProjectSubmitLoading = false;
             });
           }
         });
