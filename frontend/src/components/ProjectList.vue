@@ -249,15 +249,23 @@
       },
       deleteProject(projectName){
         let that = this;
+        that.delProjectLoading = true;
         let params = {
           url:"/projects/" + projectName + "/yml",
         };
         api.delete(params)
           .then(function(res){
+            that.delProjectLoading = false
             console.log("delete " + projectName);
             console.log(res.data.body);
+            that.$message({
+              message: '删除成功',
+              type: 'success'
+            });
+            that.getProjects()
           })
           .catch(function(err){
+            that.delProjectLoading = false
             console.log(err);
             api.reqFail(that,"删除项目失败！");
           });
@@ -339,17 +347,7 @@
         this.$confirm('确认删除该记录吗?', '提示', {
           type: 'warning'
         }).then(() => {
-          let that = this;
-          this.delProjectLoading = true;
           this.deleteProject(projectName);
-          setTimeout(function () {
-            that.getProjects();
-            that.$message({
-              message: '删除成功',
-              type: 'success'
-            });
-            that.delProjectLoading = false
-          }, 2000);
         }).catch(() => {
 
         });

@@ -50,6 +50,8 @@ def project_list(request):
         if ret:
             return Response(rest(message=ret, code=1))
         else:
+            if project_exists(request.data['name']):
+                return Response(rest(message="Project Conflict!", code=1))
             create_project(request.data)
             return Response(rest())
 
@@ -109,7 +111,8 @@ def node_detail(request, cluster_name, node_id):
 
 @api_view(['GET', 'PUT', 'DELETE'])
 def project_yml(request, project_name):
-    project_exists(project_name)
+    if not project_exists(project_name):
+        raise Http404
     if request.method == 'GET':
         yml = get_project_yml(project_name)
         return Response(rest({'yaml': yml}))
@@ -144,5 +147,5 @@ def get_node(docker_client, node_id):
 
 
 def project_exists(project_name):
-    if not os.path.exists(os.path.join(STACKS_DIR, project_name)):
-        raise Http404
+    if os.path.exists(os.path.join(STACKS_DIR, project_name)):
+        return True
