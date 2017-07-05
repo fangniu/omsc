@@ -59,6 +59,9 @@
         <el-tree
           :data="projectTree"
           :props="defaultProps"
+          v-loading="delProjectLoading"
+          element-loading-text="拼命加载中"
+          element-loading-fullscreen
           show-checkbox
           accordion
           node-key="id"
@@ -135,6 +138,7 @@
         listLoading: false,
         sels: [],//列表选中列
 
+        delProjectLoading: false, //删除加载
         editProjectFormVisible: false,//编辑界面是否显示
         editProjectSubmitLoading: false,
         //编辑界面数据
@@ -174,8 +178,7 @@
                         size:"mini"
                     },on:{
                         click:function() {
-                            console.info("点击了编辑按钮");
-                            console.log(data)
+                            console.log("点击了" + data.label + "的编辑按钮")
                             if(data.isProjectNode){
                                 that.handleProjectEdit(data.label);
                             }
@@ -186,8 +189,10 @@
                         type: "danger"
                     },on:{
                         click:function() {
-                            console.info("点击了节点" + data.id + "的删除按钮");
-                            store.remove(data);
+                            console.log("点击了" + data.label + "的删除按钮");
+                            if(data.isProjectNode){
+                                that.handleDel(data.label);
+                            }
                         }
                     }},"删除"),
                 ]),
@@ -233,13 +238,28 @@
         };
         api.get(params)
           .then(function(res){
-            console.log("project111:");
+            console.log("get " + projectName);
             console.log(res.data.body);
             that.editProjectForm = Object.assign(res.data.body, {name: projectName})
           })
           .catch(function(err){
             console.log(err);
-            api.reqFail(that,"获取project失败请刷新");
+            api.reqFail(that,"获取项目失败请刷新");
+          });
+      },
+      deleteProject(projectName){
+        let that = this;
+        let params = {
+          url:"/projects/" + projectName + "/yml",
+        };
+        api.delete(params)
+          .then(function(res){
+            console.log("delete " + projectName);
+            console.log(res.data.body);
+          })
+          .catch(function(err){
+            console.log(err);
+            api.reqFail(that,"删除项目失败！");
           });
       },
       postProject(data) {
@@ -270,7 +290,7 @@
           })
           .catch(function(err){
             console.log(err);
-            api.reqFail(that,"post project失败");
+            api.reqFail(that,"创建项目失败");
           });
       },
       putProject(projectName, yaml_str) {
@@ -315,22 +335,21 @@
         this.getUsers();
       },
       //删除
-      handleDel: function (index, row) {
+      handleDel: function (projectName) {
         this.$confirm('确认删除该记录吗?', '提示', {
           type: 'warning'
         }).then(() => {
-          this.listLoading = true;
-          //NProgress.start();
-          let para = { id: row.id };
-          removeUser(para).then((res) => {
-            this.listLoading = false;
-            //NProgress.done();
-            this.$message({
+          let that = this;
+          this.delProjectLoading = true;
+          this.deleteProject(projectName);
+          setTimeout(function () {
+            that.getProjects();
+            that.$message({
               message: '删除成功',
               type: 'success'
             });
-            this.getUsers();
-          });
+            that.delProjectLoading = false
+          }, 2000);
         }).catch(() => {
 
         });

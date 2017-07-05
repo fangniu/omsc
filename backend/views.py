@@ -11,7 +11,7 @@ from models import DockerSwarm
 from clusters import create_cluster
 from swarm import get_docker_client
 from schema_validation import check_new_project, check_project_yml, check_cluster
-from projects import get_all_projects, get_project_yml, create_project, update_project
+from projects import get_all_projects, get_project_yml, create_project, update_project, remove_project
 from omsc.conf import STACKS_DIR
 import os
 
@@ -107,12 +107,15 @@ def node_detail(request, cluster_name, node_id):
         return Response(rest())
 
 
-@api_view(['GET', 'PUT'])
+@api_view(['GET', 'PUT', 'DELETE'])
 def project_yml(request, project_name):
     project_exists(project_name)
     if request.method == 'GET':
         yml = get_project_yml(project_name)
         return Response(rest({'yaml': yml}))
+    elif request.method == 'DELETE':
+        remove_project(project_name)
+        return Response(rest())
     elif request.method == 'PUT':
         content = request.data.get('yaml')
         if content:

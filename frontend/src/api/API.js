@@ -19,6 +19,11 @@ class API {
     config.method = 'PUT';
     return axios(config);
   }
+  delete (param) {
+    config.url = param.url;
+    config.method = 'DELETE';
+    return axios(config);
+  }
   reqSuccess(obj,msg){
     obj.$message({
       message: msg,
