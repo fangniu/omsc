@@ -2,10 +2,13 @@
 # _*_coding:utf-8_*_
 
 
-import yaml
+import os
 from yaml.scanner import ScannerError
 from jsonschema import validate, FormatChecker
 from projects import get_all_projects
+from compose.cli.command import get_project
+from compose.config.errors import ConfigurationError
+from tempfile import NamedTemporaryFile
 
 __author__ = 'Sheng Chen'
 
@@ -61,19 +64,21 @@ cluster_schema = {
 
 
 def check_project(project_info):
+    tmp_f = NamedTemporaryFile()
     try:
         validate(project_info, stack_schema, format_checker=FormatChecker())
         if project_info['name'] in get_all_projects():
             return "Project name conflict!"
-        content = yaml.load(project_info['content'])
-        if type(content) != dict:
-            return "FormatError: The field 'content' is invalid"
+        tmp_f.write(project_info['content'])
+        tmp_f.seek(0)
+        get_project(os.path.dirname(tmp_f.name), config_path=[os.path.basename(tmp_f.name)])
     except ScannerError:
         return "FormatError: The field 'content' is invalid"
-    except Exception, e:
-        print type(e)
-        return e.message
-
+    except ConfigurationError, e:
+        msg = str(e).replace(tmp_f.name, project_info['name'])
+        return msg
+    finally:
+        tmp_f.close()
 
 
 def check_cluster(info):
