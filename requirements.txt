@@ -2,5 +2,5 @@ ansible==2.3.1.0
 Django==1.11.2
 django-cors-headers==1.1.0
 djangorestframework==3.3.3
-docker==2.3.0
+docker
 

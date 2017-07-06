@@ -7,6 +7,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
 from docker.errors import APIError
+from stacks import Stack
 from models import DockerSwarm
 from clusters import create_cluster
 from swarm import get_docker_client
@@ -132,6 +133,22 @@ def project_yml(request, project_name):
             return Response(rest(message="This field 'yaml' is required!"), status=status.HTTP_400_BAD_REQUEST)
 
 
+@api_view(['GET', 'POST', 'DELETE'])
+def project(request, project_name):
+    project_path = get_project_path(project_name)
+    if not os.path.exists(project_path):
+        raise Http404
+    if request.method == 'POST':
+        stack = Stack(project_name)
+        successful, out = stack.deploy(os.path.join(project_path, 'docker-compose.yml'))
+        if successful:
+            return Response(rest())
+        else:
+            return Response(rest(message=out, code=1))
+    else:
+        return Response(rest(message='TODO'), status=status.HTTP_400_BAD_REQUEST)
+
+
 def get_cluster(cluster_name):
     try:
         return DockerSwarm.objects.get(name=cluster_name)
@@ -147,5 +164,9 @@ def get_node(docker_client, node_id):
 
 
 def project_exists(project_name):
-    if os.path.exists(os.path.join(STACKS_DIR, project_name)):
+    if os.path.exists(get_project_path(project_name)):
         return True
+
+
+def get_project_path(project_name):
+    return os.path.join(STACKS_DIR, project_name)

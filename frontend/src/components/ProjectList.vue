@@ -62,8 +62,6 @@
           v-loading="delProjectLoading"
           element-loading-text="拼命加载中"
           element-loading-fullscreen
-          show-checkbox
-          accordion
           node-key="id"
           :expand-on-click-node="false"
           :render-content="renderContent"
@@ -169,34 +167,135 @@
       },
       renderContent:function(createElement, { node, data, store }) {
         let that = this;
-        return createElement('span', [
+        if(data.isProjectNode){
+          return createElement('span', [
             createElement('span', node.label),
             createElement('span', {attrs:{
                 style:"float: right; margin-right: 20px"
                 }},[
                     createElement('el-button',{attrs:{
-                        size:"mini"
+                        size:"small",
+                        icon: "edit"
                     },on:{
                         click:function() {
-                            console.log("点击了" + data.label + "的编辑按钮")
-                            if(data.isProjectNode){
-                                that.handleProjectEdit(data.label);
-                            }
-                        }
+                          console.log("点击了" + data.label + "的编辑按钮")
+                          that.handleProjectEdit(data.label);
+                        },
                     }},"编辑"),
                     createElement('el-button',{attrs:{
-                        size: "mini",
-                        type: "danger"
+                        size: "small",
+                        type: "danger",
+                        icon: "delete2"
                     },on:{
                         click:function() {
-                            console.log("点击了" + data.label + "的删除按钮");
-                            if(data.isProjectNode){
-                                that.handleDel(data.label);
-                            }
+                          console.log("点击了" + data.label + "的删除按钮");
+                          that.handleDel(data.label);
                         }
                     }},"删除"),
                 ]),
-        ]);
+          ]);
+        }
+        else {
+          let state = data.uuid? "running": "undeployed";
+          let stateType = data.uuid? "success": "gray";
+          let replicas = data.replicas? data.replicas: "-/-";
+          let startButtonDisabled = data.uuid? true: false;
+          return createElement('span', [
+            createElement('span',
+              {
+                attrs: {
+
+                },
+              },
+              [
+                createElement('i',
+                  {
+                    attrs:{
+                      class: "el-icon-star-on",
+                      style: "margin-right: 5px"
+                    }
+                  },
+                ),
+                createElement('span', node.label),
+              ]
+            ),
+            createElement('span', {
+                attrs: {
+                  style:"float: right; margin-right: 20px"
+                }
+              }, [
+                createElement('el-tag',
+                  {
+                    attrs:{
+                      type: stateType
+                    }
+                  }, state
+                ),
+                createElement('el-tag',
+                  {
+                    attrs:{
+                      type:"primary"
+                    }
+                  }, replicas + "实例"
+                ),
+                createElement('el-button-group',
+                  {
+                    attrs: {
+                      style:"margin-left: 20px"
+                    },
+                  },
+                  [
+                    createElement('el-button',
+                      {
+                        attrs: {
+                          size: "small",
+                          type: "primary",
+                          icon: "caret-right",
+                          disabled: startButtonDisabled
+                        },
+                        on: {
+                            click: function () {
+                              alert("start");
+                            }
+                        },
+                      }, "启动"
+                    ),
+                    createElement('el-button',
+                      {
+                        attrs: {
+                          size: "small",
+                          type: "primary",
+                          icon: "close",
+                          disabled: !startButtonDisabled
+                        },
+                        on: {
+                            click: function () {
+                              alert("stop");
+                            }
+                        },
+                      }, "停止"
+                    ),
+                    createElement('el-button',
+                      {
+                        attrs: {
+                          size: "small",
+                          type: "primary",
+                          icon: "plus",
+                          disabled: !startButtonDisabled
+                        },
+                        on: {
+                            click: function () {
+                              alert("stop");
+                            }
+                        },
+                      }, "扩容"
+                    ),
+                  ]
+                ),
+            ])
+          ])
+        }
+
       },
       getProjects(){
         let that = this;
@@ -209,11 +308,16 @@
             that.projectTree = [];
             res.data.body.items.forEach((item, i) => {
                 let children = [];
-                item.services.forEach((service_name, j) => {
+                item.services.forEach((service, j) => {
                     children[j] = {
                         id: j,
-                        label: service_name,
+                        label: service.displayName,
                         isProjectNode: false,
+                        uuid: service.uuid,
+                        replicas: service.replicas,
+                        image: service.image,
+                        serviceName: service.serviceName,
+                        mode: service.mode,
                     }
                 });
                 that.projectTree[i] = {

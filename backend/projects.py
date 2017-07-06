@@ -4,6 +4,7 @@
 from omsc.conf import STACKS_DIR
 from composes import get_project
 from compose.config.errors import ComposeFileNotFound
+from stacks import Stack
 import yaml
 import os
 import shutil
@@ -19,12 +20,27 @@ def get_all_projects():
     try:
         for name in projects_list:
             project = get_project(name)
-            ret.append(
-                {
-                    "name": name,
-                    "services": [s.name for s in project.services]
-                }
-            )
+            stack = Stack(name)
+            service_list = []
+            for project_s in project.services:
+                service = stack.ps_service(name + '_' + project_s.name)
+                if service:
+                    service_list.append({
+                        "displayName": project_s.name,
+                        "uuid": service.uuid,
+                        "serviceName": service.name,
+                        "mode": service.mode,
+                        "replicas": service.replicas,
+                        "image": service.image
+                    })
+                else:
+                    service_list.append({
+                        "displayName": project_s.name,
+                    })
+            ret.append({
+                "name": name,
+                "services": service_list
+            })
     except ComposeFileNotFound:
         pass
     return ret
@@ -54,6 +70,7 @@ def get_project_yml(project_name):
         # return yaml.load(file(stack_path))
         with open(project_path) as f:
             return f.read()
+
 
 if __name__ == '__main__':
     print get_all_projects()
