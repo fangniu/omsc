@@ -167,12 +167,18 @@
       },
       renderContent:function(createElement, { node, data, store }) {
         let that = this;
+        let attrs = data.state === 'deployed'? { type: "success"}: {};
         if(data.isProjectNode){
           return createElement('span', [
             createElement('span', node.label),
             createElement('span', {attrs:{
                 style:"float: right; margin-right: 20px"
                 }},[
+                    createElement('el-tag',
+                      {
+                        attrs: attrs
+                      }, data.state
+                    ),
                     createElement('el-button',{attrs:{
                         size:"small",
                         icon: "edit"
@@ -196,7 +202,7 @@
           ]);
         }
         else {
-          let state = data.uuid? "running": "undeployed";
+          let state = data.uuid? "running": "stopped";
           let stateType = data.uuid? "success": "gray";
           let replicas = data.replicas? data.replicas: "-/-";
           let startButtonDisabled = data.uuid? true: false;
@@ -322,6 +328,7 @@
                 });
                 that.projectTree[i] = {
                     id: i,
+                    state: item.state,
                     label: item.name,
                     isProjectNode: true,
                     children: children

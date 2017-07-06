@@ -4,7 +4,7 @@
 from omsc.conf import STACKS_DIR
 from composes import get_project
 from compose.config.errors import ComposeFileNotFound
-from stacks import Stack
+from stacks import Stack, StackCli
 import yaml
 import os
 import shutil
@@ -39,7 +39,8 @@ def get_all_projects():
                     })
             ret.append({
                 "name": name,
-                "services": service_list
+                "services": service_list,
+                "state": "deployed" if name in StackCli.ls() else "undeployed"
             })
     except ComposeFileNotFound:
         pass
