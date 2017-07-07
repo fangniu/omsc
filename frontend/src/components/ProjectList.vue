@@ -5,56 +5,12 @@
         <strong class="title" style="margin-bottom: 10px">Docker Stack:</strong>
       </el-col>
       <el-col :span="4" align="right">
-        <el-button type="primary" @click="handleProjectAdd" style="margin-bottom: 10px">新增</el-button>
+        <el-button type="primary" @click="handleProjectAdd" style="margin-bottom: 10px" icon="plus">新增</el-button>
+        <el-button type="info" style="margin-bottom: 10px" @click="getProjects">刷新</el-button>
       </el-col>
     </el-row>
     <el-row :span="23" font-family="Helvetica Neue">
       <section>
-        <!--工具条-->
-        <!--<el-col :span="24" class="toolbar" style="padding-bottom: 0px;">-->
-          <!--<el-form :inline="true" :model="filters">-->
-            <!--<el-form-item>-->
-              <!--<el-input v-model="filters.services" placeholder="服务名"></el-input>-->
-            <!--</el-form-item>-->
-            <!--<el-form-item>-->
-              <!--<el-button type="primary" v-on:click="getUsers">查询</el-button>-->
-            <!--</el-form-item>-->
-            <!--<el-form-item>-->
-              <!--<el-button type="primary" @click="handleAdd">新增</el-button>-->
-            <!--</el-form-item>-->
-          <!--</el-form>-->
-        <!--</el-col>-->
-
-        <!--列表-->
-        <!--<el-table :data="project_list" highlight-current-row v-loading="listLoading" @selection-change="selsChange" style="width: 100%;">-->
-          <!--<el-table-column type="selection" width="55">-->
-          <!--</el-table-column>-->
-          <!--<el-table-column prop="name" label="项目" span="4" sortable>-->
-          <!--</el-table-column>-->
-          <!--<el-table-column prop="services" label="服务" span="14">-->
-          <!--</el-table-column>-->
-          <!--<el-table-column label="操作" span="6">-->
-            <!--<template scope="scope">-->
-              <!--<el-button size="small" @click="handleEdit(scope.$index, scope.row)">编辑</el-button>-->
-              <!--<el-button type="danger" size="small" @click="handleDel(scope.$index, scope.row)">删除</el-button>-->
-            <!--</template>-->
-          <!--</el-table-column>-->
-        <!--</el-table>-->
-        <!--<el-table :data="projectList" highlight-current-row v-loading="listLoading" @selection-change="selsChange" style="width: 100%;">-->
-          <!--<el-table-column type="selection" width="55">-->
-          <!--</el-table-column>-->
-          <!--<el-table-column prop="label" label="项目" span="4" sortable>-->
-          <!--</el-table-column>-->
-          <!--<el-table-column prop="services" label="服务" span="14">-->
-          <!--</el-table-column>-->
-          <!--<el-table-column label="操作" span="6">-->
-            <!--<template scope="scope">-->
-              <!--<el-button size="small" @click="handleEdit(scope.$index, scope.row)">编辑</el-button>-->
-              <!--<el-button type="danger" size="small" @click="handleDel(scope.$index, scope.row)">删除</el-button>-->
-            <!--</template>-->
-          <!--</el-table-column>-->
-        <!--</el-table>-->
-
         <!--project tree-->
         <el-tree
           :data="projectTree"
@@ -88,6 +44,35 @@
           <div slot="footer" class="dialog-footer">
             <el-button @click.native="editProjectFormVisible = false">取消</el-button>
             <el-button type="primary" @click.native="editProjectSubmit" :loading="editProjectSubmitLoading">修改</el-button>
+          </div>
+        </el-dialog>
+
+        <!--服务扩容-->
+        <!--<el-dialog title="服务扩容" v-model="serviceScaleVisible" :close-on-click-modal="false">-->
+        <!--</el-dialog>-->
+        <el-dialog
+          title="服务扩容"
+          :visible.sync="serviceScaleVisible"
+          size="tiny"
+          :model="currentService"
+          >
+          <el-form label-width="80px" ref="serviceScaleForm">
+            <el-form-item label="服务:">
+              {{currentService.label}}
+            </el-form-item>
+            <el-form-item label="当前实例:">
+              {{currentService.replicas.current}}
+            </el-form-item>
+            <el-form-item label="配置实例:">
+              {{currentService.replicas.total}}
+            </el-form-item>
+            <el-form-item label="扩容:">
+              <el-input-number v-model="serviceReplicas" :step="1" :min="1"></el-input-number>
+            </el-form-item>
+          </el-form>
+          <div slot="footer" class="dialog-footer">
+            <el-button @click="serviceScaleVisible = false">取消</el-button>
+            <el-button type="primary" @click="putServiceScale">提交</el-button>
           </div>
         </el-dialog>
 
@@ -126,6 +111,10 @@
         filters: {
           name: ''
         },
+        currentService: {
+            replicas: {}
+        },
+        serviceReplicas: 1,
         projectTree: [],
         defaultProps: {
           children: 'children',
@@ -142,6 +131,7 @@
         //编辑界面数据
         editProjectForm: {},
 
+        serviceScaleVisible: false, //
         newProjectFormVisible: false,//新增界面是否显示
         newProjectSubmitLoading: false,
         newProjectFormRules: {
@@ -184,10 +174,26 @@
                         icon: "edit"
                     },on:{
                         click:function() {
-                          console.log("点击了" + data.label + "的编辑按钮")
+                          console.log("点击了" + data.label + "的编辑按钮");
                           that.handleProjectEdit(data.label);
                         },
                     }},"编辑"),
+                    createElement('el-button',
+                      {
+                        attrs: {
+                          size: "small",
+                          type: "primary",
+                          icon: "caret-right",
+                          loading: data.deployLoading,
+//                          disabled: startButtonDisabled
+                        },
+                        on: {
+                            click: function () {
+                              that.deployProject(data);
+                            }
+                        },
+                      }, "部署"
+                    ),
                     createElement('el-button',{attrs:{
                         size: "small",
                         type: "danger",
@@ -202,9 +208,10 @@
           ]);
         }
         else {
+          let that = this;
           let state = data.uuid? "running": "stopped";
           let stateType = data.uuid? "success": "gray";
-          let replicas = data.replicas? data.replicas: "-/-";
+          let replicas = data.replicas? data.replicas: { current: "-", total: "-"};
           let startButtonDisabled = data.uuid? true: false;
           return createElement('span', [
             createElement('span',
@@ -242,7 +249,7 @@
                     attrs:{
                       type:"primary"
                     }
-                  }, replicas + "实例"
+                  }, replicas.current + "/" + replicas.total + "实例"
                 ),
                 createElement('el-button-group',
                   {
@@ -256,45 +263,31 @@
                         attrs: {
                           size: "small",
                           type: "primary",
-                          icon: "caret-right",
-                          disabled: startButtonDisabled
-                        },
-                        on: {
-                            click: function () {
-                              alert("start");
-                            }
-                        },
-                      }, "启动"
-                    ),
-                    createElement('el-button',
-                      {
-                        attrs: {
-                          size: "small",
-                          type: "primary",
-                          icon: "close",
-                          disabled: !startButtonDisabled
-                        },
-                        on: {
-                            click: function () {
-                              alert("stop");
-                            }
-                        },
-                      }, "停止"
-                    ),
-                    createElement('el-button',
-                      {
-                        attrs: {
-                          size: "small",
-                          type: "primary",
                           icon: "plus",
                           disabled: !startButtonDisabled
                         },
                         on: {
                             click: function () {
-                              alert("stop");
+                              that.serviceReplicas = data.replicas.total;
+                              that.handleServiceScale(data)
                             }
                         },
                       }, "扩容"
+                    ),
+                    createElement('el-button',
+                      {
+                        attrs: {
+                          size: "small",
+                          type: "danger",
+                          icon: "delete",
+                          disabled: !startButtonDisabled
+                        },
+                        on: {
+                            click: function () {
+                              that.delService(data);
+                            }
+                        },
+                      }, "删除"
                     ),
                   ]
                 ),
@@ -324,12 +317,14 @@
                         image: service.image,
                         serviceName: service.serviceName,
                         mode: service.mode,
+                        project: item.name
                     }
                 });
                 that.projectTree[i] = {
                     id: i,
                     state: item.state,
                     label: item.name,
+                    deployLoading: false,
                     isProjectNode: true,
                     children: children
                 }
@@ -412,6 +407,40 @@
             api.reqFail(that,"创建项目失败");
           });
       },
+      deployProject(project) {
+        let that = this;
+        project.deployLoading = true;
+        console.log("deployProjectLoading");
+        console.log(project);
+        let param = {
+            url: "/projects/" + project.label ,
+        };
+        api.post(param)
+          .then(function(res){
+            project.deployLoading = false;
+            console.log("deploy project:");
+            console.log(res.data);
+            //NProgress.done();
+            if(res.data.code === 1){
+              that.$message({
+                message: res.data.message,
+                type: 'error'
+              })
+            }
+            else{
+              that.$message({
+                message: '部署成功',
+                type: 'success'
+              });
+              that.getProjects()
+            }
+          })
+          .catch(function(err){
+            project.deployLoading = false;
+            console.log(err);
+            api.reqFail(that,"部署项目失败");
+          });
+      },
       putProject(projectName, yaml_str) {
         let that = this;
         let param = {
@@ -453,6 +482,64 @@
         this.page = val;
         this.getUsers();
       },
+      putServiceScale(){
+        let that = this;
+        let param = {
+            url:"/projects/" + that.currentService.project + "/services/" + that.currentService.serviceName + "/scale",
+            data: {
+                replicas: that.serviceReplicas
+            }
+        };
+        console.log(param)
+        api.put(param)
+          .then(function(res){
+            if(res.data.code === 1){
+              that.$message({
+                message: res.data.message,
+                type: 'error'
+              })
+            }
+            else{
+              that.$message({
+                message: '扩容成功',
+                type: 'success'
+              });
+              that.getProjects();
+              that.serviceScaleVisible = false
+            }
+          })
+          .catch(function(err){
+            console.log(err);
+            api.reqFail(that,"put scale");
+          });
+      },
+      delService(service){
+        let that = this;
+        let param = {
+            url:"/projects/" + service.project + "/services/" + service.serviceName + "/remove",
+        };
+        console.log(param)
+        api.delete(param)
+          .then(function(res){
+            if(res.data.code === 1){
+              that.$message({
+                message: res.data.message,
+                type: 'error'
+              })
+            }
+            else{
+              that.$message({
+                message: '删除成功',
+                type: 'success'
+              });
+              that.getProjects();
+            }
+          })
+          .catch(function(err){
+            console.log(err);
+            api.reqFail(that,"delete service");
+          });
+      },
       //删除
       handleDel: function (projectName) {
         this.$confirm('确认删除该记录吗?', '提示', {
@@ -472,6 +559,10 @@
       //显示新增界面
       handleProjectAdd: function () {
         this.newProjectFormVisible = true;
+      },
+      handleServiceScale: function (service) {
+        this.currentService = service;
+        this.serviceScaleVisible = true;
       },
       //编辑
       editProjectSubmit: function () {

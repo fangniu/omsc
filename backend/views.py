@@ -9,6 +9,7 @@ from rest_framework.response import Response
 from docker.errors import APIError
 from stacks import Stack
 from models import DockerSwarm
+from errors import DockerCliError
 from clusters import create_cluster
 from swarm import get_docker_client
 from schema_validation import check_new_project, check_project_yml, check_cluster
@@ -110,7 +111,7 @@ def node_detail(request, cluster_name, node_id):
         return Response(rest())
 
 
-@api_view(['GET', 'PUT', 'DELETE'])
+@api_view(['GET', 'POST', 'PUT', 'DELETE'])
 def project_yml(request, project_name):
     if not project_exists(project_name):
         raise Http404
@@ -140,13 +141,50 @@ def project(request, project_name):
         raise Http404
     if request.method == 'POST':
         stack = Stack(project_name)
-        successful, out = stack.deploy(os.path.join(project_path, 'docker-compose.yml'))
-        if successful:
-            return Response(rest())
-        else:
-            return Response(rest(message=out, code=1))
+        try:
+            out = stack.deploy(os.path.join(project_path, 'docker-compose.yml'))
+            return Response(rest(message=out))
+        except DockerCliError, e:
+            return Response(rest(message=e.message, code=1))
     else:
         return Response(rest(message='TODO'), status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['DELETE'])
+def service_remove(request, project_name, service_name):
+    if not project_exists(project_name):
+        raise Http404
+    stack = Stack(project_name)
+    service = stack.services.get(service_name)
+    if service:
+        try:
+            out = service.rm()
+            return Response(rest(message=out))
+        except DockerCliError, e:
+            return Response(rest(message=e.message, code=1))
+    else:
+        return Response(rest(message='No such service: %s' % service_name), status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['PUT'])
+def service_scale(request, project_name, service_name):
+    if not project_exists(project_name):
+        raise Http404
+    stack = Stack(project_name)
+    service = stack.services.get(service_name)
+    replicas = request.data.get("replicas")
+    if not replicas:
+        return Response(rest(message="This field 'replicas' is required!"), status=status.HTTP_400_BAD_REQUEST)
+    if service:
+        try:
+            out = service.scale(int(replicas))
+            return Response(rest(message=out))
+        except DockerCliError, e:
+            return Response(rest(message=e.message, code=1))
+        except ValueError:
+            return Response(rest(message="Invalid replicas"), status=status.HTTP_400_BAD_REQUEST)
+    else:
+        return Response(rest(message='No such service: %s' % service_name), status=status.HTTP_400_BAD_REQUEST)
 
 
 def get_cluster(cluster_name):

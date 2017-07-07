@@ -8,6 +8,8 @@ from backend import views
 __author__ = 'Sheng Chen'
 
 urlpatterns = [
+    url(r'^projects/(?P<project_name>(.*))/services/(?P<service_name>(.*))/remove$', views.service_remove),
+    url(r'^projects/(?P<project_name>(.*))/services/(?P<service_name>(.*))/scale$', views.service_scale),
     url(r'^projects/(?P<project_name>(.*))/yml$', views.project_yml),
     url(r'^projects/(?P<project_name>(.*))$', views.project),
     url(r'^projects$', views.project_list),

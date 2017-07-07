@@ -25,12 +25,16 @@ def get_all_projects():
             for project_s in project.services:
                 service = stack.ps_service(name + '_' + project_s.name)
                 if service:
+                    current, total = service.replicas.split('/')
                     service_list.append({
                         "displayName": project_s.name,
                         "uuid": service.uuid,
                         "serviceName": service.name,
                         "mode": service.mode,
-                        "replicas": service.replicas,
+                        "replicas": {
+                            "current": int(current),
+                            "total": int(total)
+                        },
                         "image": service.image
                     })
                 else:
