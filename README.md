@@ -3,7 +3,7 @@
 运维管理系统中心
 # 技术栈
 前后端分离， rest API
-## 前段
+## 前端
   vuejs + element UI + axios
 ## 后端
   python2.7 + django + docker + restframework
